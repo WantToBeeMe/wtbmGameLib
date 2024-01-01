@@ -6,46 +6,65 @@ import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL45.*
 
 object Renderer {
-    private val DEFAULT_SHADER = Shader(null,null)
-    private var currentShader = DEFAULT_SHADER
+    private val DEFAULT_RENDER_PROGRAM = RenderProgram(null,null,null)
+    private var currentRenderProgram = DEFAULT_RENDER_PROGRAM
 
-    private var DEFAULT_BATCH_SYSTEM = BatchSystem(intArrayOf(3,4,2))
-    private var currentBatchSystem = DEFAULT_BATCH_SYSTEM
+    //   fun toggleBlend(on : Boolean){
+    //        if(on){
+    //            glEnable(GL_BLEND)
+    //            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+    //        }else{
+    //            glDisable(GL_BLEND)
+    //        }
+    //    }
+    //    fun toggleDepthTest(on : Boolean){
+    //        if(on){
+    //            glEnable(GL_DEPTH_TEST)
+    //            glDepthFunc(GL_LESS)
+    //        } else{
+    //            glDisable(GL_DEPTH_TEST)
+    //        }
+    //    }
 
-    fun startShader(shader: Shader){
-        render()
-        currentShader = shader
+
+    fun startDrawing(){
+        glUseProgram(currentRenderProgram.shader.shaderProgramID)
     }
 
-    fun endShader(){
-        startShader(DEFAULT_SHADER)
+    fun startRenderProgram(program: RenderProgram){
+        render()
+        currentRenderProgram = program
+        glUseProgram(currentRenderProgram.shader.shaderProgramID)
+    }
+
+    fun endDrawing(){
+        startRenderProgram(DEFAULT_RENDER_PROGRAM)
     }
 
     fun reserveBatchSpot(vertices : Int, elements: Int) {
-        currentBatchSystem.reserveBatchSpot(vertices,elements)
+        currentRenderProgram.batchSystem.reserveBatchSpot(vertices,elements)
     }
     fun addVertex(vertex: FloatArray) : Int{
-        return currentBatchSystem.addVertex(vertex)
+        return currentRenderProgram.batchSystem.addVertex(vertex)
     }
     fun addTriangle(first: Int, second: Int, third: Int) : Int {
-        return currentBatchSystem.addTriangle(first,second,third)
+        return currentRenderProgram.batchSystem.addTriangle(first,second,third)
     }
 
 
     private val identity : Matrix4f = Matrix4f().identity()
     fun render(){
-        glUseProgram(currentShader.shaderProgramID)
+
         uploadMat4f("ProjMtx", identity)
 
         glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
-
-        currentBatchSystem.renderBatches()
+        currentRenderProgram.batchSystem.renderBatches()
 
     }
 
 
     private fun getVarLocation(uniformName: String) : Int{
-        val varLocation = glGetUniformLocation(currentShader.shaderProgramID , uniformName)
+        val varLocation = glGetUniformLocation(currentRenderProgram.shader.shaderProgramID , uniformName)
         if(varLocation < 0)
             Logger.logWarning("Cant find: `${uniformName}` Uniform in the current shader", true)
         return varLocation

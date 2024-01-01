@@ -44,9 +44,8 @@ class BatchSystem(private val vertexAttributes: IntArray ) {
     }
 
 
-    fun setDefaultBatchSize(vertices: Int, elements: Int ) : BatchSystem{
+    fun setDefaultBatchSize(vertices: Int, elements: Int ){
         defaultBatchSize = Pair(vertices,elements)
-        return this
     }
 
     // using this BatchConfig you will only be able to create fully dynamic render batches
