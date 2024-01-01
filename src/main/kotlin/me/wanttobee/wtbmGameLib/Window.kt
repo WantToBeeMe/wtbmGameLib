@@ -3,6 +3,7 @@ package me.wanttobee.wtbmGameLib
 import me.wanttobee.wtbmGameLib.imGui.ImGuiController
 import me.wanttobee.wtbmGameLib.input.Keyboard
 import me.wanttobee.wtbmGameLib.input.Mouse
+import me.wanttobee.wtbmGameLib.rendering.Renderer
 import org.joml.Vector3f
 import org.joml.Vector4i
 import org.lwjgl.glfw.Callbacks
@@ -51,7 +52,6 @@ object Window {
         // GuiMaster.resize(width,height)
         ImGuiController.windowResize(width.toFloat(), height.toFloat())
     }
-
 
     fun enableVSync(enable: Boolean){
         glfwSwapInterval(if(enable) GLFW_TRUE else GLFW_FALSE)
@@ -196,6 +196,7 @@ object Window {
     fun windowLoop( action: () -> Unit ){
         var beginTime = glfwGetTime().toFloat();
         var endTime = 0f;
+        Renderer.reset()
 
         // Game.init()
         // Game.start()
@@ -208,6 +209,7 @@ object Window {
             GL11.glClear(GL11.GL_COLOR_BUFFER_BIT or GL11.GL_DEPTH_BUFFER_BIT)
 
             action.invoke()
+            Renderer.reset()
             ImGuiController.render()
             Mouse.reset()
 

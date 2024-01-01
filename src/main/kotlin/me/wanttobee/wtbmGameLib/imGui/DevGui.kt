@@ -9,6 +9,7 @@ import imgui.enums.ImGuiColorEditFlags
 import imgui.enums.ImGuiCond
 import me.wanttobee.wtbmGameLib.Logger
 import org.joml.Vector3f
+import java.util.UUID
 
 // Beware!! this shouldn't be used in any finished product
 // because of its implementation it is really easy to use but REALLY inefficient
@@ -134,6 +135,25 @@ object DevGui : IImGuiWidget {
             val doubleValue = ImDouble(newValue)
             ImGui.inputDouble(title, doubleValue)
             resultHash[title] = doubleValue.get()
+        }
+        return newValue
+    }
+
+    fun text(text: String) {
+        optionsMap[UUID.randomUUID().toString()] = {
+            ImGui.text(text)
+        }
+    }
+
+    fun  slider(min: Float, max : Float, title : String) : Float{
+        if(optionAlreadyInMap(title))
+            return min
+        val result = resultHash[title]
+        val newValue = if(result is Float) result else min
+        optionsMap[title] = {
+            val floatValue = floatArrayOf(newValue)
+            ImGui.sliderFloat(title, floatValue, min, max)
+            resultHash[title] = floatValue[0]
         }
         return newValue
     }

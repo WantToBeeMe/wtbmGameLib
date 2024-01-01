@@ -10,6 +10,10 @@ import java.util.ArrayList
 // or you can use the getters, though that one is not preferable
 
 object Mouse {
+    const val LEFT = 0
+    const val RIGHT = 1
+    const val MIDDLE = 2
+
     private var scrollX: Double = 0.0
     private var scrollY: Double = 0.0
     private var xPos: Double = 0.0
