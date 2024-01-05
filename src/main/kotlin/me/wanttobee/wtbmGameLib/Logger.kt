@@ -16,7 +16,10 @@ object Logger {
     fun setLogLevel(level: LogLevel) {
         currentLogLevel = level
     }
-
+    private var colorsEnabled = true
+    fun toggleColors(){
+        colorsEnabled = !colorsEnabled
+    }
     private fun printLogInConsole(message: Any?, level: LogLevel, logOnce: Boolean) {
         val m: String = message.toString()
         if(logOnce){
@@ -24,15 +27,17 @@ object Logger {
                 return
             logOnceList.add(m)
         }
-        val coloredMessage = when (level) {
+        val coloredMessage = if(colorsEnabled) when (level) {
             LogLevel.ERROR -> "\u001B[31m$m\u001B[0m"    // Red
             LogLevel.WARNING -> "\u001B[33m$m\u001B[0m"  // Yellow
             LogLevel.INFO -> "\u001B[34m$m\u001B[0m"     // Blue
             LogLevel.DEBUG -> "\u001B[0m$m"             // White
             else -> m
-        }
+        } else m
+
         if (level.ordinal >= currentLogLevel.ordinal || currentLogLevel == LogLevel.ALL) {
-            println("\u001B[37m$level:\u001B[0m $coloredMessage")
+            if(colorsEnabled) println("\u001B[37m$level:\u001B[0m $coloredMessage")
+            else println("$level: $coloredMessage")
         }
     }
 

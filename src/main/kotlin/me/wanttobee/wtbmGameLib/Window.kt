@@ -3,6 +3,7 @@ package me.wanttobee.wtbmGameLib
 import me.wanttobee.wtbmGameLib.imGui.ImGuiController
 import me.wanttobee.wtbmGameLib.input.Keyboard
 import me.wanttobee.wtbmGameLib.input.Mouse
+import me.wanttobee.wtbmGameLib.renderer.Renderer
 import org.joml.Vector3f
 import org.joml.Vector4i
 import org.lwjgl.glfw.Callbacks
@@ -12,6 +13,7 @@ import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL11.GL_VERSION
 import org.lwjgl.opengl.GL11.glGetString
+import org.lwjgl.opengl.GL45
 import org.lwjgl.system.MemoryUtil
 import java.util.*
 
@@ -199,6 +201,7 @@ object Window {
         // Game.init()
         // Game.start()
         Mouse.setWindow(glfwWindow!!)
+
         while (!glfwWindowShouldClose(glfwWindow!!)){
             if(Keyboard.isKeyPressed(quickExitKey)){
                 glfwSetWindowShouldClose(glfwWindow!!, true)

@@ -3,6 +3,14 @@ package me.wanttobee.wtbmGameLib.renderer
 import me.wanttobee.wtbmGameLib.Logger
 import org.lwjgl.opengl.GL45.*
 
+// TODO: Dirty flags
+//   so in order to save performance, we might consider adding dirty flagging inside the bathes
+//   If we are considering this, this means that we dont recreate the array every time, but instead only recreate when its flagged with being dirty
+//   Or even better, only re assign the bit that changed (but that would require separate objects which save the buffer and there location of the vertices)
+//   However, This is super cool to add, its not to replace this batch, it will be a different type of batch
+//   (a reason for this could be 3 different big 3D models, these shouldn't have to be re-added to the array every time,
+//   instead we add them once, the 3 different big models then know that there index goes from index 12 to 340, and if it needs to change, we just let the model deal with that)
+
 //vertex count is each dot on the screen
 //element count is each triangle on the screen (each triangle is a row of 3 on its own in the array.)
 class RenderBatch(
@@ -19,25 +27,25 @@ class RenderBatch(
     private var attribCount : Int = vertexAttributes.size
     private var vertexSize : Int = vertexAttributes.sum()
 
-    private var vertexArray : FloatArray
-    private var elementArray : IntArray
+    private val vertexArray : FloatArray = FloatArray(maxVertices * vertexSize)
+    private val elementArray : IntArray = IntArray(maxElements * 3)
+    private val textureArray : Array<Texture2D?> = Array(32){null}
 
-    private var elementIndex = 0
     private var vertexIndex = 0
-
-    init {
-        vertexArray = FloatArray(maxVertices * vertexSize)
-        elementArray = IntArray(maxElements * 3)
-    }
+    private var elementIndex = 0
+    private var textureIndex = 0
 
     fun isEmpty() : Boolean{
         return elementIndex == 0 && vertexIndex == 0
+        // we don't have to check textureIndex == 0
+        // even if there is a texture, it doesn't matter if there are no vertices
     }
 
     fun hasSpace(vertices : Int, elements: Int) : Boolean{
         val vertexHasSpace = vertices <= maxVertices-vertexIndex
         val elementHasSpace = elements <= maxElements-elementIndex
-        return elementHasSpace && vertexHasSpace
+        //val textureHasSpace = textures  <= 32-textureIndex
+        return elementHasSpace && vertexHasSpace // textureHasSpace
     }
 
     fun getVerticesAvailable() : Int{
@@ -46,11 +54,9 @@ class RenderBatch(
     fun getElementsAvailable() : Int{
         return maxElements - elementIndex
     }
-
-    fun checkIfEnoughPlace(providedVertices: Int, providedElements: Int) : Boolean{
-        return getElementsAvailable() >= providedElements && getVerticesAvailable() >= providedVertices
+    fun getTexturesAvailable() : Int{
+        return 32 - textureIndex
     }
-
 
     fun addVertex(vertex: FloatArray) : Int{
         if(vertex.size != vertexSize){

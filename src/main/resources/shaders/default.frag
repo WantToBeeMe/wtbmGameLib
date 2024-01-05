@@ -5,13 +5,13 @@
 precision mediump float;
 #endif
 
-//uniform sampler2D texture0;
-//uniform vec4 colDiffuse;
+uniform sampler2D textureSampler;
+
 in vec2 fragTexCoord;
 in vec4 fragColor;
 
 out vec4 color;
 void main() {
-    //vec4 texelColor = texture(texture0, fragTexCoord);
-    color = fragColor+fragTexCoord.x+fragTexCoord.y;//*texelColor*colDiffuse;
+    vec4 texelColor = texture(textureSampler, fragTexCoord);
+    color = fragColor*texelColor;
 }

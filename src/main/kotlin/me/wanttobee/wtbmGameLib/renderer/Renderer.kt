@@ -9,36 +9,67 @@ object Renderer {
     private val DEFAULT_RENDER_PROGRAM = RenderProgram(null,null,null)
     private var currentRenderProgram = DEFAULT_RENDER_PROGRAM
 
-    //   fun toggleBlend(on : Boolean){
-    //        if(on){
-    //            glEnable(GL_BLEND)
-    //            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-    //        }else{
-    //            glDisable(GL_BLEND)
-    //        }
-    //    }
-    //    fun toggleDepthTest(on : Boolean){
-    //        if(on){
-    //            glEnable(GL_DEPTH_TEST)
-    //            glDepthFunc(GL_LESS)
-    //        } else{
-    //            glDisable(GL_DEPTH_TEST)
-    //        }
-    //    }
+    private var defaultBlendOn = false
+    fun setDefaultBlend(on : Boolean){
+        defaultBlendOn = on
+    }
+    private var blendOn = false
+    fun toggleBlend(on : Boolean){
+        // we do it this way because it will probably be i tiny bit faster to check if it has to be set before setting
+        // (like, instead of enabling blend even though its enabled already. idk how that is done because I didn't look, but i can't imagine a single if check being less efficient then changing how the gpu is going to work)
+        if(on && !blendOn){
+            blendOn = true
+            glEnable(GL_BLEND)
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        }
+        else if(!on && blendOn){
+            blendOn = false
+            glDisable(GL_BLEND)
+        }
+    }
 
+    private var defaultDepthTestOn = false
+    fun setDefaultDepthTest(on : Boolean){
+        defaultDepthTestOn = on
+    }
+    private var depthTestOn = false
+    fun toggleDepthTest(on : Boolean){
+        if(on && !depthTestOn){
+            depthTestOn = true
+            glEnable(GL_DEPTH_TEST)
+            glDepthFunc(GL_LESS)
+        }
+        else if(!on && depthTestOn){
+            depthTestOn = false
+            glDisable(GL_DEPTH_TEST)
+        }
+    }
+
+    //glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 
     fun startDrawing(){
+        if(defaultBlendOn != blendOn) toggleBlend(defaultBlendOn)
+        if(defaultDepthTestOn != depthTestOn) toggleDepthTest(defaultDepthTestOn)
         glUseProgram(currentRenderProgram.shader.shaderProgramID)
     }
 
-    fun startRenderProgram(program: RenderProgram){
+    fun changeRenderProgram(program: RenderProgram){
         render()
         currentRenderProgram = program
         glUseProgram(currentRenderProgram.shader.shaderProgramID)
     }
 
+    // alies for endDrawing, but it sounds better if you want to go back to the default Render program
+    fun stopCurrentRenderProgram(){
+        endDrawing()
+    }
+
     fun endDrawing(){
-        startRenderProgram(DEFAULT_RENDER_PROGRAM)
+        render()
+        if(currentRenderProgram != DEFAULT_RENDER_PROGRAM){
+            currentRenderProgram = DEFAULT_RENDER_PROGRAM
+            glUseProgram(currentRenderProgram.shader.shaderProgramID)
+        }
     }
 
     fun reserveBatchSpot(vertices : Int, elements: Int) {
@@ -51,16 +82,13 @@ object Renderer {
         return currentRenderProgram.batchSystem.addTriangle(first,second,third)
     }
 
-
     private val identity : Matrix4f = Matrix4f().identity()
     fun render(){
-
         uploadMat4f("ProjMtx", identity)
 
-        glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
         currentRenderProgram.batchSystem.renderBatches()
-
     }
+
 
 
     private fun getVarLocation(uniformName: String) : Int{
@@ -109,10 +137,17 @@ object Renderer {
         if(varLocation < 0) return
         glUniform1i(varLocation, intt)
     }
-    fun uploadTexture(uniformName : String, slot : Int){
-        //the same as uploading an int, but I know I will forget so that's why I have this func
-        uploadInt(uniformName, slot)
+    fun uploadTexture(uniformName : String, slot : Int, texture: Texture2D){
+        // when uploading more textures at once, it just like uploading an intArray
+        if(slot < 0 || slot > 31){
+            Logger.logError("cant upload texture, slot: $slot is out of range (0..31)")
+            return
+        }
+        uploadInt(uniformName, slot)   //the same as uploading an int
+        glActiveTexture(GL_TEXTURE0 + slot)
+        glBindTexture(GL_TEXTURE_2D, texture.id)
     }
+
     fun uploadIntArray(uniformName : String, array : IntArray ){
         val varLocation = getVarLocation(uniformName)
         if(varLocation < 0) return

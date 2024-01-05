@@ -1,7 +1,5 @@
 package me.wanttobee.wtbmGameLib.renderer
 
-import me.wanttobee.wtbmGameLib.Logger
-import org.joml.Matrix4f
 import org.lwjgl.opengl.GL45.*
 import kotlin.math.max
 

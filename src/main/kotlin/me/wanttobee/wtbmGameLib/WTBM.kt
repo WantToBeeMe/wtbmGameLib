@@ -13,11 +13,18 @@ object WTBM {
             Logger.setLogLevel(Logger.LogLevel.ERROR)
     }
 
-    fun recommendedMainArgsConfig(args: Array<String>){
-        if(args.contains("-dev"))
+    fun recommendedMainArgsConfig(args: Array<String>) {
+        if (args.contains("-dev")) {
             setDevMode(true)
-        if(args.contains("-log"))
+        }
+
+        if (args.contains("-log")) {
             Logger.setLogLevel(Logger.LogLevel.INFO)
+        }
+
+        if (args.contains("-col")) {
+            Logger.toggleColors()
+        }
     }
 
 }
