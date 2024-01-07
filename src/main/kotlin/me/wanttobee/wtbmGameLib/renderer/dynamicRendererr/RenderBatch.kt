@@ -1,35 +1,33 @@
-package me.wanttobee.wtbmGameLib.renderer
+package me.wanttobee.wtbmGameLib.renderer.dynamicRendererr
 
 import me.wanttobee.wtbmGameLib.Logger
+import me.wanttobee.wtbmGameLib.log
+import me.wanttobee.wtbmGameLib.renderer.IRenderer
+import me.wanttobee.wtbmGameLib.renderer.Texture2D
 import org.lwjgl.opengl.GL45.*
-
-// TODO: Dirty flags
-//   so in order to save performance, we might consider adding dirty flagging inside the bathes
-//   If we are considering this, this means that we dont recreate the array every time, but instead only recreate when its flagged with being dirty
-//   Or even better, only re assign the bit that changed (but that would require separate objects which save the buffer and there location of the vertices)
-//   However, This is super cool to add, its not to replace this batch, it will be a different type of batch
-//   (a reason for this could be 3 different big 3D models, these shouldn't have to be re-added to the array every time,
-//   instead we add them once, the 3 different big models then know that there index goes from index 12 to 340, and if it needs to change, we just let the model deal with that)
 
 //vertex count is each dot on the screen
 //element count is each triangle on the screen (each triangle is a row of 3 on its own in the array.)
-class RenderBatch(
+class RenderBatch (
     private val maxVertices : Int,
     private val maxElements : Int,
     vertexAttributes : IntArray,
     IDs : Triple<Int,Int,Int>, // Triple(vao, vbo, ebo)
-) {
-    private var vaoID : Int = IDs.first
-    private var vboID : Int = IDs.second
-    private var eboID : Int = IDs.third
+    private val enableTextures : Boolean
+)  {
+    private val TEXTURE_SLOTS = 16
+    private val vaoID : Int = IDs.first
+    private val vboID : Int = IDs.second
+    private val eboID : Int = IDs.third
 
     //private val vertexAttributes = intArrayOf(3,4,2) // 3=position  4=color  2=textureUV
-    private var attribCount : Int = vertexAttributes.size
+    private var attributeCount : Int = vertexAttributes.size
     private var vertexSize : Int = vertexAttributes.sum()
 
     private val vertexArray : FloatArray = FloatArray(maxVertices * vertexSize)
     private val elementArray : IntArray = IntArray(maxElements * 3)
-    private val textureArray : Array<Texture2D?> = Array(32){null}
+    private val textureArray : Array<Texture2D?> = Array(TEXTURE_SLOTS){null}
+    private val textureSlots = IntArray(TEXTURE_SLOTS){ i->i}
 
     private var vertexIndex = 0
     private var elementIndex = 0
@@ -41,11 +39,12 @@ class RenderBatch(
         // even if there is a texture, it doesn't matter if there are no vertices
     }
 
-    fun hasSpace(vertices : Int, elements: Int) : Boolean{
+    fun hasSpace(vertices : Int, elements: Int, textures : Int = 0) : Boolean{
         val vertexHasSpace = vertices <= maxVertices-vertexIndex
         val elementHasSpace = elements <= maxElements-elementIndex
-        //val textureHasSpace = textures  <= 32-textureIndex
-        return elementHasSpace && vertexHasSpace // textureHasSpace
+        val textureHasSpace = textures <= TEXTURE_SLOTS-textureIndex
+                                                    //don't allow textures,or otherwise have enough space for the textures
+        return elementHasSpace && vertexHasSpace && ((enableTextures && textureHasSpace) || !enableTextures)
     }
 
     fun getVerticesAvailable() : Int{
@@ -55,17 +54,29 @@ class RenderBatch(
         return maxElements - elementIndex
     }
     fun getTexturesAvailable() : Int{
-        return 32 - textureIndex
+        return TEXTURE_SLOTS - textureIndex
     }
 
-    fun addVertex(vertex: FloatArray) : Int{
-        if(vertex.size != vertexSize){
+    fun addTexture(texture: Texture2D) : Int{
+        val index = textureArray.indexOf(texture)
+        if(index != -1 && index < textureIndex) return index
+        textureArray[textureIndex] = texture
+        return textureIndex++
+    }
+
+    fun addVertex(vertex: FloatArray, textureID : Int = -1) : Int{
+        val givenSize = vertex.size + (if(enableTextures) 1 else 0)
+        // if textures are enabled, the vertex may be 1 less, which will be added later which is the texture ID
+        if(givenSize != vertexSize){
             Logger.logError("vertex is not the same size as the initialized vertex size")
             return -1
         }
         for(i in vertex.indices){
             vertexArray[vertexIndex*vertexSize + i] = vertex[i]
         }
+        if(enableTextures)
+            vertexArray[vertexIndex*vertexSize + vertex.size] = textureID.toFloat()
+
         return vertexIndex++
     }
 
@@ -76,10 +87,23 @@ class RenderBatch(
         return elementIndex++
     }
 
-    fun render(){
+    fun clear(){
+        vertexIndex = 0
+        elementIndex = 0
+        textureIndex = 0
+    }
 
+    fun render(){
         //glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
         //uploading data or something
+        for(i in 0 until textureIndex){
+            glActiveTexture(GL_TEXTURE0 + i)
+            glBindTexture(GL_TEXTURE_2D, textureArray[i]!!.id)
+             // we can safely assert that it is not null,
+            // it should never be null given this index, and if it is we want it to crash
+        }
+        DynamicRenderer.uploadIntArray("texturesSampler",textureSlots)
+
         glBindBuffer(GL_ARRAY_BUFFER, vboID)
         glBufferSubData(GL_ARRAY_BUFFER, 0, vertexArray)
 
@@ -90,14 +114,14 @@ class RenderBatch(
         glBindVertexArray(vaoID)
 
         //Enable vertex attributes pointers
-        for( i in 0 until attribCount)
+        for( i in 0 until attributeCount)
             glEnableVertexAttribArray(i)
 
         // we only draw the indices that have been set this iteration (elementIndex*3L)
         glDrawElements(GL_TRIANGLES, elementIndex*3, GL_UNSIGNED_INT, 0)
 
         //disable them again, because they are drawn
-        for( i in 0 until attribCount)
+        for( i in 0 until attributeCount)
             glDisableVertexAttribArray(i)
 
         glBindVertexArray(0)
@@ -105,8 +129,7 @@ class RenderBatch(
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
 
         // we now reset the indexes
-        vertexIndex = 0
-        elementIndex = 0
+        clear()
         // this essentially means we reset the whole array. But resetting the whole array would be really inefficient.
         // instead we only reset our writing head (which are these indexes). then we tell the GPU to only draw the elements in the array until the writing head
         // so even though all the old data stays in the array, they won't be drawn until it is being overwritten by new data.

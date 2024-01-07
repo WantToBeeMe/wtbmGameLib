@@ -152,7 +152,7 @@ class Shader(private val vertexPath : String?, private val fragmentPath : String
             val successLink = glGetProgrami(shaderProgramID, GL_LINK_STATUS)
             if(successLink == GL_FALSE){
                 val len = glGetProgrami(shaderProgramID, GL_INFO_LOG_LENGTH)
-                Logger.logError("linking shader failed \n ${glGetProgramInfoLog(fragmentID, len)}")
+                Logger.logError("linking shader failed \n ${glGetProgramInfoLog(fragmentID, len)} \n(you might want to check if all the in/out names correspond)")
                 glDeleteProgram(shaderProgramID)
                 glDeleteShader(vertexID)
                 glDeleteShader(fragmentID)
