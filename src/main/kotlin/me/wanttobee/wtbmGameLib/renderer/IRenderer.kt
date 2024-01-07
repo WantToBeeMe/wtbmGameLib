@@ -6,6 +6,9 @@ import org.joml.*
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL45.*
 
+// This is the interface that all the renderers will have. This has multiple benefits
+// this makes sure each renderer can make use of shaders, and also that each render can upload uniforms
+// instead of having to create this functionality, we just create a renderer that already has this build in. cool
 interface IRenderer {
     var currentShader : Shader
     var currentBatch : RenderBatchProgram

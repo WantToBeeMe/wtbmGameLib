@@ -15,6 +15,15 @@ import org.lwjgl.opengl.GL45.*
 //       how do way say an batch will react on drawTexture with a different batch size (probably just make the right one first)
 //       how do you rotate an image ? prob matrix before you even start drawing right, anyway, drawRectanglePro(... , 30deg)
 
+
+// TODO: make more render system types
+//   StaticRenderer = a renderer which runs on dirty flags, and objects subscribed to it
+//   VoxelRenderer = a renderer which has a perfectly predefined vertex/element array, and only makes use of uniforms to tell how the elements should be colored
+
+// This Dynamic Renderer is one of the different render types that are created (currently this is a lie and there is only 1, but i am planning to create more)
+// Each renderer has its pro's and cons, so you have to decide which renderer is best suited for your game
+// This DynamicRenderer is more of a "draw everywhere whenever you want" style, just call a draw method (or make your won draw call method)
+// this then will draw it (with the assigned shader and/or batch )
 object DynamicRenderer : IRenderer {
     private val DEFAULT_SHADER = Shader(null,null)
     override var currentShader: Shader = DEFAULT_SHADER

@@ -6,6 +6,9 @@ import me.wanttobee.wtbmGameLib.renderer.IRenderer
 import me.wanttobee.wtbmGameLib.renderer.Texture2D
 import org.lwjgl.opengl.GL45.*
 
+// this is one of the batches that a render batch program contains
+// this batch contains all the information for a lot of elements, which will all be thrown at the gpu at once, cool
+
 //vertex count is each dot on the screen
 //element count is each triangle on the screen (each triangle is a row of 3 on its own in the array.)
 class RenderBatch (
@@ -15,6 +18,7 @@ class RenderBatch (
     IDs : Triple<Int,Int,Int>, // Triple(vao, vbo, ebo)
     private val enableTextures : Boolean
 )  {
+    //TODO: find out how the program checks your pc and decides how many slots it can handle
     private val TEXTURE_SLOTS = 16
     private val vaoID : Int = IDs.first
     private val vboID : Int = IDs.second
@@ -91,6 +95,9 @@ class RenderBatch (
         vertexIndex = 0
         elementIndex = 0
         textureIndex = 0
+        // this essentially means we reset the whole array. But resetting the whole array would be really inefficient.
+        // instead we only reset our writing head (which are these indexes). then we tell the GPU to only draw the elements in the array until the writing head
+        // so even though all the old data stays in the array, they won't be drawn until it is being overwritten by new data.
     }
 
     fun render(){
@@ -130,8 +137,5 @@ class RenderBatch (
 
         // we now reset the indexes
         clear()
-        // this essentially means we reset the whole array. But resetting the whole array would be really inefficient.
-        // instead we only reset our writing head (which are these indexes). then we tell the GPU to only draw the elements in the array until the writing head
-        // so even though all the old data stays in the array, they won't be drawn until it is being overwritten by new data.
     }
 }

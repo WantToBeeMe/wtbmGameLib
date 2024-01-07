@@ -7,6 +7,8 @@ import org.lwjgl.stb.STBImage.stbi_image_free
 import org.lwjgl.stb.STBImage.stbi_load
 import java.io.File
 
+// hold all the information for the textures
+//TODO: make it so you can decide how you want to to wrap, and how you want it to scale
 class Texture2D(val filepath: String, pathFromResources : Boolean) {
     var id : Int = -1
         private set

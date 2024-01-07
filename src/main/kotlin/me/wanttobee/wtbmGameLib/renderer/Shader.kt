@@ -5,6 +5,9 @@ import me.wanttobee.wtbmGameLib.Logger
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL20.*
 
+// shaders have the ability to change how surtain things look
+// if you set either the vertexPath or fragmentPath (or both) then their designated position will reset to the default shader for that part
+// there is also an extra method info() which will return a cool string to get everything we know about the shader, really handy for debugging
 class Shader(private val vertexPath : String?, private val fragmentPath : String?) {
     var shaderProgramID : Int = -1
         private set
