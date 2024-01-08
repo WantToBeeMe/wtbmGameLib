@@ -1,9 +1,9 @@
-package me.wanttobee.wtbmGameLib.renderer.dynamicRendererr
+package me.wanttobee.wtbmGameLib.renderer.dynamicRenderer
 
 import me.wanttobee.wtbmGameLib.Logger
-import me.wanttobee.wtbmGameLib.log
-import me.wanttobee.wtbmGameLib.renderer.IRenderer
 import me.wanttobee.wtbmGameLib.renderer.Texture2D
+import org.lwjgl.opengl.GL11
+import org.lwjgl.opengl.GL13
 import org.lwjgl.opengl.GL45.*
 
 // this is one of the batches that a render batch program contains
@@ -11,15 +11,14 @@ import org.lwjgl.opengl.GL45.*
 
 //vertex count is each dot on the screen
 //element count is each triangle on the screen (each triangle is a row of 3 on its own in the array.)
-class RenderBatch (
+class DynamicRenderBatch (
     private val maxVertices : Int,
     private val maxElements : Int,
     vertexAttributes : IntArray,
     IDs : Triple<Int,Int,Int>, // Triple(vao, vbo, ebo)
     private val enableTextures : Boolean
 )  {
-    //TODO: find out how the program checks your pc and decides how many slots it can handle
-    private val TEXTURE_SLOTS = 16
+    private val TEXTURE_SLOTS = GL11.glGetInteger(GL13.GL_MAX_TEXTURE_UNITS)
     private val vaoID : Int = IDs.first
     private val vboID : Int = IDs.second
     private val eboID : Int = IDs.third
@@ -100,14 +99,48 @@ class RenderBatch (
         // so even though all the old data stays in the array, they won't be drawn until it is being overwritten by new data.
     }
 
+    private fun generateInformativeElementString(newLines: Boolean) : String{
+        var baseString = "["
+        var elementBitIndex = 1
+        for(e in elementArray){
+            if(newLines && elementBitIndex % 3 == 1) baseString += "\n  ${elementBitIndex / 3}: "
+            baseString += if(elementBitIndex % 3 == 0) "$e|" else "$e,"
+            if(elementBitIndex / 3 >= elementIndex)
+                return "$baseString..."
+            elementBitIndex++
+        }
+        return baseString
+    }
+    private fun generateInformativeVerticesString(newLines: Boolean) : String{
+        var baseString = "["
+        var vertexBitIndex = 1
+        for(v in vertexArray){
+            if(newLines && vertexBitIndex % vertexSize == 1) baseString += "\n  ${vertexBitIndex / vertexSize}: "
+            baseString += if(vertexBitIndex % vertexSize == 0) "$v|" else "$v,"
+            if(vertexBitIndex / vertexSize >= vertexIndex)
+                return "$baseString..."
+            vertexBitIndex++
+        }
+        return baseString
+    }
+
+    fun printCurrentState(newLines :Boolean){
+        Logger.logDebug("elements: $elementIndex")
+        Logger.logDebug("elements: ${generateInformativeElementString(newLines)}")
+        Logger.logDebug("vertices: $vertexIndex")
+        Logger.logDebug("vertices: ${generateInformativeVerticesString(newLines)}")
+        Logger.logDebug("textures: $textureIndex")
+    }
+
     fun render(){
         //glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
         //uploading data or something
+
         for(i in 0 until textureIndex){
             glActiveTexture(GL_TEXTURE0 + i)
             glBindTexture(GL_TEXTURE_2D, textureArray[i]!!.id)
-             // we can safely assert that it is not null,
-            // it should never be null given this index, and if it is we want it to crash
+        // we can safely assert that it is not null,
+        // it should never be null given this index, and if it is we want it to crash
         }
         DynamicRenderer.uploadIntArray("texturesSampler",textureSlots)
 

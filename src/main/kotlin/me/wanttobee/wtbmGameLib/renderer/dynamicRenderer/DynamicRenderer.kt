@@ -1,6 +1,6 @@
-package me.wanttobee.wtbmGameLib.renderer.dynamicRendererr
+package me.wanttobee.wtbmGameLib.renderer.dynamicRenderer
 
-import me.wanttobee.wtbmGameLib.log
+import me.wanttobee.wtbmGameLib.renderer.Camera
 import me.wanttobee.wtbmGameLib.renderer.IRenderer
 import me.wanttobee.wtbmGameLib.renderer.Shader
 import me.wanttobee.wtbmGameLib.renderer.Texture2D
@@ -15,68 +15,27 @@ import org.lwjgl.opengl.GL45.*
 //       how do way say an batch will react on drawTexture with a different batch size (probably just make the right one first)
 //       how do you rotate an image ? prob matrix before you even start drawing right, anyway, drawRectanglePro(... , 30deg)
 
-
-// TODO: make more render system types
-//   StaticRenderer = a renderer which runs on dirty flags, and objects subscribed to it
-//   VoxelRenderer = a renderer which has a perfectly predefined vertex/element array, and only makes use of uniforms to tell how the elements should be colored
-
 // This Dynamic Renderer is one of the different render types that are created (currently this is a lie and there is only 1, but i am planning to create more)
 // Each renderer has its pro's and cons, so you have to decide which renderer is best suited for your game
 // This DynamicRenderer is more of a "draw everywhere whenever you want" style, just call a draw method (or make your won draw call method)
 // this then will draw it (with the assigned shader and/or batch )
-object DynamicRenderer : IRenderer {
+object DynamicRenderer : IRenderer<DynamicRenderProgram> {
     private val DEFAULT_SHADER = Shader(null,null)
     override var currentShader: Shader = DEFAULT_SHADER
 
-    private val DEFAULT_BATCH = RenderBatchProgram(intArrayOf(3,4,2,1), true) //3=position   4=color   2=UV texture cords
-    override var currentBatch : RenderBatchProgram = DEFAULT_BATCH
+    private val DEFAULT_BATCH = DynamicRenderProgram(intArrayOf(3,4,2,1), true) //3=position   4=color   2=UV texture cords
+    override var currentBatch : DynamicRenderProgram = DEFAULT_BATCH
 
-    private var defaultBlendOn = false
-    fun setDefaultBlend(on : Boolean){
-        defaultBlendOn = on
-    }
-    private var blendOn = false
-    fun toggleBlend(on : Boolean){
-        // we do it this way because it will probably be i tiny bit faster to check if it has to be set before setting
-        // (like, instead of enabling blend even though its enabled already. idk how that is done because I didn't look, but i can't imagine a single if check being less efficient then changing how the gpu is going to work)
-        if(on && !blendOn){
-            blendOn = true
-            glEnable(GL_BLEND)
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        }
-        else if(!on && blendOn){
-            blendOn = false
-            glDisable(GL_BLEND)
-        }
-    }
-
-    private var defaultDepthTestOn = false
-    fun setDefaultDepthTest(on : Boolean){
-        defaultDepthTestOn = on
-    }
-    private var depthTestOn = false
-    fun toggleDepthTest(on : Boolean){
-        if(on && !depthTestOn){
-            depthTestOn = true
-            glEnable(GL_DEPTH_TEST)
-            glDepthFunc(GL_LESS)
-        }
-        else if(!on && depthTestOn){
-            depthTestOn = false
-            glDisable(GL_DEPTH_TEST)
-        }
-    }
+    override var blendOn: Boolean = false
+    override var depthTestOn: Boolean = false
 
     //glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
-
-    fun startDrawing(){
-        if(defaultBlendOn != blendOn) toggleBlend(defaultBlendOn)
-        if(defaultDepthTestOn != depthTestOn) toggleDepthTest(defaultDepthTestOn)
+    override fun startDrawing(){
         glUseProgram(currentShader.shaderProgramID)
     }
 
     // change the shader without changing the current batch (null if change back to default)
-    fun changeProgram(shaderProgram: Shader?){
+    override fun changeProgram(shaderProgram: Shader?){
         render() // render the all the shit you just did before changing the program
         // will change whatever you just added to the batch in something you might not want,
         // you added it to the previous program, not this one, so it should be handled by the previous program
@@ -86,7 +45,7 @@ object DynamicRenderer : IRenderer {
 
     // changing the shader and the batch. set second parameter to desired batch,
     // or to null if you want the batch to go back to default (stays unchanged if it was already default)
-    fun changeProgram(shaderProgram: Shader?, batchProgram: RenderBatchProgram?){
+    override fun changeProgram(shaderProgram: Shader?, batchProgram: DynamicRenderProgram?){
         changeProgram(shaderProgram)
         currentBatch = if(batchProgram == null){
             if(currentBatch == DEFAULT_BATCH) return
@@ -95,7 +54,7 @@ object DynamicRenderer : IRenderer {
             batchProgram
     }
 
-    fun endDrawing(){
+    override fun endDrawing(){
         render()
         if(currentShader != DEFAULT_SHADER)
             currentShader = DEFAULT_SHADER
@@ -116,9 +75,9 @@ object DynamicRenderer : IRenderer {
         return currentBatch.addTriangle(first,second,third)
     }
 
-    private val identity : Matrix4f = Matrix4f().identity()
     private fun render(){
-        uploadMat4f("ProjMtx", identity)
+        uploadMat4f("uProjMtx", Camera.current.getProjectionMatrix())
+        uploadMat4f("uViewMtx", Camera.current.getViewMatrix())
 
         currentBatch.render()
     }

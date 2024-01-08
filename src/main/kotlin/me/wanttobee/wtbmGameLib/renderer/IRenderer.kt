@@ -1,17 +1,61 @@
 package me.wanttobee.wtbmGameLib.renderer
 
 import me.wanttobee.wtbmGameLib.Logger
-import me.wanttobee.wtbmGameLib.renderer.dynamicRendererr.RenderBatchProgram
 import org.joml.*
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL45.*
 
+
+// TODO: make more render system types
+//   StaticRenderer = a renderer which runs on dirty flags, and objects subscribed to it
+//   VoxelRenderer = a renderer which has a perfectly predefined vertex/element array, and only makes use of uniforms to tell how the elements should be colored
+
 // This is the interface that all the renderers will have. This has multiple benefits
 // this makes sure each renderer can make use of shaders, and also that each render can upload uniforms
 // instead of having to create this functionality, we just create a renderer that already has this build in. cool
-interface IRenderer {
+interface IRenderer<RP : IRenderProgram> {
     var currentShader : Shader
-    var currentBatch : RenderBatchProgram
+    var currentBatch : RP
+
+    fun startDrawing()
+    fun endDrawing()
+
+    // change the shader without changing the current batch (null if change back to default)
+    fun changeProgram(shaderProgram: Shader?)
+
+    // changing the shader and the batch. set second parameter to desired batch,
+    // or to null if you want the batch to go back to default (stays unchanged if it was already default)
+    fun changeProgram(shaderProgram: Shader?, batchProgram: RP?)
+
+
+    var blendOn : Boolean
+    fun toggleBlend(on : Boolean){
+        // we do it this way because it will probably be i tiny bit faster to check if it has to be set before setting
+        // (like, instead of enabling blend even though its enabled already. idk how that is done because I didn't look, but i can't imagine a single if check being less efficient then changing how the gpu is going to work)
+        if(on && !blendOn){
+            blendOn = true
+            glEnable(GL_BLEND)
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        }
+        else if(!on && blendOn){
+            blendOn = false
+            glDisable(GL_BLEND)
+        }
+    }
+
+
+    var depthTestOn: Boolean
+    fun toggleDepthTest(on : Boolean){
+        if(on && !depthTestOn){
+            depthTestOn = true
+            glEnable(GL_DEPTH_TEST)
+            glDepthFunc(GL_LESS)
+        }
+        else if(!on && depthTestOn){
+            depthTestOn = false
+            glDisable(GL_DEPTH_TEST)
+        }
+    }
 
     private fun getVarLocation(uniformName: String) : Int{
         val varLocation = glGetUniformLocation(currentShader.shaderProgramID , uniformName)
@@ -54,6 +98,7 @@ interface IRenderer {
         if(varLocation < 0) return
         glUniform1f(varLocation, fl)
     }
+
     fun uploadInt(uniformName : String, intt : Int){
         val varLocation = getVarLocation(uniformName)
         if(varLocation < 0) return
@@ -76,5 +121,9 @@ interface IRenderer {
         glUniform1iv(varLocation, array)
         //v means Value
         //that means its a value pointer,
+    }
+
+    fun printCurrentState(newLines: Boolean){
+        currentBatch.printCurrentState(newLines)
     }
 }

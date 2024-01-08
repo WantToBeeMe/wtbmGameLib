@@ -5,7 +5,8 @@
 precision mediump float;
 #endif
 
-uniform mat4 ProjMtx;
+uniform mat4 uProjMtx;
+uniform mat4 uViewMtx;
 
 in vec3 vertexPosition;
 in vec4 vertexColor;
@@ -19,6 +20,6 @@ void main() {
     fragTexCoord = vertexTexCoord;
     fragColor = vertexColor;
     fragTexID = vertexTexID;
-    gl_Position = ProjMtx * vec4(vertexPosition, 1);
+    gl_Position = uProjMtx * uViewMtx * vec4(vertexPosition, 1);
 }
 

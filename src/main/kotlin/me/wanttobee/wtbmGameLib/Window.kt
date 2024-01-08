@@ -19,8 +19,10 @@ import java.util.*
 object Window {
     private var glfwWindow : Long? = null
     private var fullScreen = false;
-    private var width : Int = 900;
-    private var height : Int = 600;
+    var width : Int = 900
+        private set
+    var height : Int = 600
+        private set
     private var backgroundColor : Vector3f = Vector3f()
     private var quickExitKey = -1;
     private var dt = 1f/60f;

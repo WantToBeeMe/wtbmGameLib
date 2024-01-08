@@ -8,7 +8,7 @@ version = "0.0.2"
 
 repositories {
     mavenCentral()
-    jcenter()
+    jcenter() //needed for joml and imgui
 }
 
 val lwjglVersion = "3.3.2"

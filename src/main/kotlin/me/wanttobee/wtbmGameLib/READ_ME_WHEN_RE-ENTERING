@@ -1,0 +1,25 @@
+So, What is the current status of the renderer
+basically everything in under the renderer folder is work in progress, however,
+its pretty cool already and you can take a lot for reference if you want to expand on it.
+The Shader and Texture2D class are both pretty strong,
+so strong that i would say that even if you decide to delete everything, that you can still copy and paste this over to the new one.
+However, the rest is up for debate, some code is just plain old bad, other is good but not sure if its in the right place.
+
+Anyway, The idea for this render was that the end user, using this library, wouldn't have to struggle with all this graphics stuff,
+and instead could just pick the type of renderer that they saw fit for there game.
+The only one that is currently made is called dynamicRenderer, and its purpose is that it a "draw whenever, where-ever you want"
+it provides you with simple draw method that just draw immediately, (just like raylib). however, i tried batching it, but it is quit bad on my pc, i only have 4 texture slots available
+and if you constantly draw different textures, this pretty much defeats the purpose of this batch.
+
+I also already had 2 more in mind for different types of batch systems, one which is a more static approach, this batch lets you add objects to the batch, which will stay there forever until you remove them again
+this is maybe more complicated but also more efficient. It lets you use the dirty flag system and all.
+Its saves you from calling DrawRectangle() every loop iteration
+
+the other is a voxel batch, which doesnt have any vertices (these are predefined) the only important thing is the uniforms which
+tell where to color in these created vertices. Basically skipping the whole vertex shader step
+
+
+So, the TextureRenderer was my try to create a rendering system that would be the same (or even better) than the rendering system of Raylib
+but i failed this time, its worse... with the test that i run, raylib has 40 fps, and my try has 20 fps
+
+Also tried adding a camera, but that camera is also not good, so that also needs to be reworked probably, (for example, it now reverses it which is not supose to happen)

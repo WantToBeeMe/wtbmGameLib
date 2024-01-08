@@ -1,5 +1,7 @@
-package me.wanttobee.wtbmGameLib.renderer.dynamicRendererr
+package me.wanttobee.wtbmGameLib.renderer.dynamicRenderer
 
+import me.wanttobee.wtbmGameLib.Logger
+import me.wanttobee.wtbmGameLib.renderer.IRenderProgram
 import me.wanttobee.wtbmGameLib.renderer.Texture2D
 import org.lwjgl.opengl.GL45.*
 import kotlin.math.max
@@ -12,10 +14,10 @@ import kotlin.math.max
 //  if this is not the case it will log an error. However, if again that texture boolean is set to true, this means that you're
 //  the array should instead be 1 slot smaller than you specified, then you can use the second parameter to provide an int for
 //  the value you got back when you used the method addTexture
-class RenderBatchProgram(private val vertexAttributes: IntArray, private val willContainTextures : Boolean) {
+class DynamicRenderProgram(private val vertexAttributes: IntArray, private val willContainTextures : Boolean) : IRenderProgram{
     private var defaultMaxVertices = 1000
     private var defaultMaxElements = 500
-    private val batches : MutableList<RenderBatch> = mutableListOf()
+    private val batches : MutableList<DynamicRenderBatch> = mutableListOf()
     private var batchIndex = 0
 
     fun setDefaultBatchSize(vertices: Int, elements: Int){
@@ -23,12 +25,12 @@ class RenderBatchProgram(private val vertexAttributes: IntArray, private val wil
         defaultMaxElements = elements
     }
 
-    fun clear(){
+    override fun clear(){
         for(b in batches){
             b.clear()
         }
     }
-    fun render(){
+    override fun render(){
         for(b in batches){
             if(!b.isEmpty())
                 b.render()
@@ -58,8 +60,14 @@ class RenderBatchProgram(private val vertexAttributes: IntArray, private val wil
             .addTriangle(first,second,third)
     }
 
+    override fun printCurrentState(newLines: Boolean){
+        for(b in batches.indices){
+            Logger.logDebug("batch $b:")
+            batches[b].printCurrentState(newLines)
+        }
+    }
 
-    private fun createRenderBatch(vertices: Int, elements: Int) : RenderBatch {
+    private fun createRenderBatch(vertices: Int, elements: Int) : DynamicRenderBatch {
         val maxVertices = max(defaultMaxVertices, vertices )
         val maxElements = max(defaultMaxElements, elements )
 
@@ -90,6 +98,6 @@ class RenderBatchProgram(private val vertexAttributes: IntArray, private val wil
         glBindBuffer(GL_ARRAY_BUFFER, 0)
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
 
-        return RenderBatch(maxVertices, maxElements, vertexAttributes, Triple(vaoID,vboID, eboID), willContainTextures)
+        return DynamicRenderBatch(maxVertices, maxElements, vertexAttributes, Triple(vaoID,vboID, eboID), willContainTextures)
     }
 }

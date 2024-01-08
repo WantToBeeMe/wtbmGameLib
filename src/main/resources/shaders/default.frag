@@ -5,7 +5,8 @@
 precision mediump float;
 #endif
 
-uniform sampler2D texturesSampler[16];
+
+uniform sampler2D texturesSampler[32];
 
 in vec2 fragTexCoord;
 in vec4 fragColor;
@@ -18,9 +19,10 @@ void main() {
     if (fragTexID < 0.0) {
         texelColor = vec4(1.0);
     } else {
-        int textureIndex = int(fragTexID);
-        texelColor = texture(texturesSampler[textureIndex], fragTexCoord);
+         int textureIndex = int(fragTexID);
+         texelColor = texture(texturesSampler[textureIndex], fragTexCoord);
     }
-
     color = fragColor * texelColor;
 }
+
+
